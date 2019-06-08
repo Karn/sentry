@@ -1,0 +1,151 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2019 Karn Saheb
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'org.jetbrains.dokka-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'jacoco'
+
+android {
+    compileSdkVersion config.build.compileSdk
+
+    defaultConfig {
+        targetSdkVersion config.build.targetSdk
+        minSdkVersion config.build.minSdk
+
+        versionCode config.versions.libCode
+        versionName config.versions.libName
+
+        testInstrumentationRunner config.testDeps.instrumentationRunner
+    }
+
+    buildTypes {
+        debug {
+            testCoverageEnabled true
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lintOptions.abortOnError false
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+}
+
+dependencies {
+    implementation config.deps.kotlin
+
+    implementation config.deps.androidx.appcompat
+
+    testImplementation config.testDeps.junit
+
+    testImplementation config.testDeps.mockito.core
+    testImplementation config.testDeps.mockito.ktx
+}
+
+jacoco.toolVersion = config.build.jacocoAgentVersion
+
+tasks.withType(Test) {
+    jacoco.includeNoLocationClasses = true
+    //travis has some strict RAM restrictions, can't afford to exceed this
+    maxHeapSize = "1024m"
+    jvmArgs "-Xmx1024m"
+}
+
+/**
+ * Generate sources. Adapted from https://stackoverflow.com/a/28969412/5037824
+ */
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+}
+
+artifacts.archives sourcesJar
+
+/**
+ * Adapted from https://medium.com/@rafael_toledo/unified-code-coverage-for-android-revisited-44789c9b722f
+ */
+task jacocoTestReport(type: JacocoReport, dependsOn: ['testDebugUnitTest', 'createDebugCoverageReport']) {
+    group = "Reporting"
+    description = "Generate Jacoco coverage reports for Debug build"
+
+    reports {
+        xml.enabled = true
+        html.enabled = true
+    }
+
+    // what to exclude from coverage report
+    // UI, "noise", generated classes, platform classes, etc.
+    def excludes = [
+            '**/R.class',
+            '**/R$*.class',
+            '**/*$ViewInjector*.*',
+            '**/BuildConfig.*',
+            '**/Manifest*.*',
+            '**/*Test*.*',
+            'android/**/*.*',
+            '**/*Fragment.*',
+            '**/*Activity.*'
+    ]
+    // generated classes
+    classDirectories = fileTree(
+            dir: "$buildDir/intermediates/classes/debug",
+            excludes: excludes
+    ) + fileTree(
+            dir: "$buildDir/tmp/kotlin-classes/debug",
+            excludes: excludes
+    )
+
+    // sources
+    sourceDirectories = files([
+            android.sourceSets.main.java.srcDirs,
+            "$project.projectDir/src/main/java"
+    ])
+    executionData = fileTree(dir: project.buildDir, includes: ['jacoco/testDebugUnitTest.exec'])
+}
+
+dokka {
+    outputFormat = 'html'
+    outputDirectory = "$buildDir/javadoc"
+
+    // Use to include or exclude non public members.
+    includeNonPublic = false
+
+    // Do not create index pages for empty packages
+    skipEmptyPackages = true
+    noStdlibLink = true
+}

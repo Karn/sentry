@@ -1,0 +1,36 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+group = 'io.karn'
+
+buildscript {
+    apply from: rootProject.file('gradle/configuration.gradle')
+
+    repositories {
+        google()
+        jcenter()
+    }
+
+    dependencies {
+        classpath config.build.gradle.androidPlugin
+        classpath config.build.gradle.kotlin
+
+        // NOTE: Do not place your application configuration here; they belong
+        // in the individual module build.gradle files
+        classpath config.build.gradle.androidMaven
+        // Code coverage
+        classpath config.build.gradle.jacoco
+        // Library documentation
+        classpath config.build.gradle.dokka
+    }
+}
+
+subprojects {
+    repositories {
+        google()
+        jcenter()
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.10.2'
+    distributionUrl = "https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip"
+}
