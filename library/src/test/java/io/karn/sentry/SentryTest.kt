@@ -145,6 +145,33 @@ internal class SentryTest {
         verifyNoMoreInteractions(activity)
     }
 
+    @Test()
+    fun `Ignore results from empty permissionResult`() {
+        // Create test object
+        val sentry = Sentry(activity, permissionHelper)
+
+        // Initialize mocked responses
+        setupPermissionHelper(permissionHelper, PERMISSION_DENIED)
+
+        // Perform action
+        `when`(activity.requestPermissions(any(), anyInt())).then {
+            val permissions = it.getArgument<Array<String>>(0)
+            val code = it.getArgument<Int>(1)
+
+            // Set the permission result to an empty array.
+            sentry.onRequestPermissionsResult(code, permissions, intArrayOf())
+        }
+
+        // Perform action
+        sentry.requestPermission(ARBITRARY_PERMISSION, callback)
+
+        // Assert
+        verify(activity, times(1)).requestPermissions(any(), eq(sentry.hashCode()))
+        verify(callback, never()).invoke(any(Boolean::class.java))
+
+        verifyNoMoreInteractions(activity)
+    }
+
     @Test
     fun `Always return granted permission for API less than M`() {
         // Set the the version to be less than M.
