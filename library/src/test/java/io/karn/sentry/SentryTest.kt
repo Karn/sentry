@@ -94,6 +94,17 @@ internal class SentryTest {
         setFinalStatic(Build.VERSION::class.java.getField("SDK_INT"), Build.VERSION_CODES.M)
     }
 
+    @Test
+    fun `External initialization`() {
+        setupPermissionHelper(permissionHelper, PERMISSION_GRANTED)
+
+        Sentry.with(activity)
+                .requestPermission(ARBITRARY_PERMISSION, callback)
+
+        verify(activity, never()).requestPermissions(any(), anyInt())
+        verify(callback, times(1)).invoke(eq(true))
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun `Expect error when empty permission is specified`() {
 

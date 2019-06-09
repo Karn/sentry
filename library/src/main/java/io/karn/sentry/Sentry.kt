@@ -39,7 +39,7 @@ class Sentry internal constructor(activity: AppCompatActivity, private val permi
 
     companion object {
         /**
-         * A fluent API to create and instance of the Sentry object.
+         * A fluent API to create an instance of the Sentry object.
          *
          * @param activity  A reference to an activity.
          * @return An instance of the Sentry object.
@@ -50,7 +50,7 @@ class Sentry internal constructor(activity: AppCompatActivity, private val permi
     }
 
     private val requestCode: Int = this.hashCode()
-    lateinit var callback: ((Boolean) -> Unit)
+    private lateinit var callback: ((Boolean) -> Unit)
     private val activity: WeakReference<AppCompatActivity> = WeakReference(activity)
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
