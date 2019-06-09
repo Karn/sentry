@@ -178,9 +178,23 @@ internal class SentryTest {
     }
 
     @Test
-    @Ignore
     fun `Single permission denied`() {
+        // Create test object
+        val sentry = Sentry(activity, permissionHelper)
 
+        // Initialize mocked responses
+        setupPermissionHelper(permissionHelper, PERMISSION_DENIED)
+
+        setupPermissionResult(activity, sentry, PERMISSION_DENIED)
+
+        // Perform action
+        sentry.requestPermission(ARBITRARY_PERMISSION, callback)
+
+        // Assert
+        verify(activity, times(1)).requestPermissions(any(), eq(sentry.hashCode()))
+        verify(callback, times(1)).invoke(eq(false))
+
+        verifyNoMoreInteractions(activity)
     }
 
     @Test
