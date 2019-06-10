@@ -25,10 +25,10 @@
 package io.karn.sentry
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.PermissionChecker
 import java.lang.ref.WeakReference
 
 
@@ -58,14 +58,8 @@ class Sentry internal constructor(activity: AppCompatActivity, private val permi
             return
         }
 
-        when (requestCode) {
-            this.requestCode -> {
-                when (grantResults[0]) {
-                    PackageManager.PERMISSION_GRANTED -> callback(true)
-                    else -> callback(false)
-                }
-            }
-            else -> Unit
+        if (requestCode == this.requestCode) {
+            callback(grantResults[0] == PermissionChecker.PERMISSION_GRANTED)
         }
     }
 
@@ -83,18 +77,17 @@ class Sentry internal constructor(activity: AppCompatActivity, private val permi
         this.callback = callback
 
         with(activity.get()) {
-            this ?: return@with
+            this ?: return
 
-            when (permissionHelper.hasPermission(this, permission)) {
-                PackageManager.PERMISSION_GRANTED -> callback(true)
-                else -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        this.requestPermissions(arrayOf(permission), requestCode)
-                    } else {
-                        callback(true)
-                    }
-                }
+            if (permissionHelper.hasPermission(this, permission)) {
+                return@with callback(true)
             }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                return@with this.requestPermissions(arrayOf(permission), requestCode)
+            }
+
+            callback(true)
         }
     }
 }

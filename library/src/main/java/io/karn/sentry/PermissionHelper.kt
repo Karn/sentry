@@ -1,12 +1,11 @@
 package io.karn.sentry
 
 import android.content.Context
-import androidx.core.content.ContextCompat
+import androidx.core.content.PermissionChecker
 
 object PermissionHelper : IPermissionHelper {
 
-    @PermissionResult
-    override fun hasPermission(context: Context, permission: String): Int {
-        return ContextCompat.checkSelfPermission(context, permission)
+    override fun hasPermission(context: Context, permission: String): Boolean {
+        return PermissionChecker.checkSelfPermission(context, permission) == PermissionChecker.PERMISSION_GRANTED
     }
 }

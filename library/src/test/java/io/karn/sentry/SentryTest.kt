@@ -24,10 +24,10 @@
 
 package io.karn.sentry
 
-import android.content.pm.PackageManager.PERMISSION_DENIED
-import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.PermissionChecker.PERMISSION_DENIED
+import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
@@ -66,9 +66,9 @@ internal class SentryTest {
         /**
          * Configure the default state for a given permission.
          */
-        fun setupPermissionHelper(permissionHelper: IPermissionHelper, @PermissionResult initialPermissionResult: Int) {
+        fun setupPermissionHelper(permissionHelper: IPermissionHelper, isInitialPermissionGranted: Boolean) {
             `when`(permissionHelper.hasPermission(any(AppCompatActivity::class.java), anyString()))
-                    .thenReturn(initialPermissionResult)
+                    .thenReturn(isInitialPermissionGranted)
         }
 
         /**
@@ -96,7 +96,7 @@ internal class SentryTest {
 
     @Test
     fun `External initialization`() {
-        setupPermissionHelper(permissionHelper, PERMISSION_GRANTED)
+        setupPermissionHelper(permissionHelper, true)
 
         Sentry.with(activity)
                 .requestPermission(ARBITRARY_PERMISSION, callback)
@@ -108,14 +108,14 @@ internal class SentryTest {
     @Test(expected = IllegalArgumentException::class)
     fun `Expect error when empty permission is specified`() {
 
-        setupPermissionHelper(permissionHelper, PERMISSION_GRANTED)
+        setupPermissionHelper(permissionHelper, true)
 
         Sentry(activity, permissionHelper).requestPermission(EMPTY_PERMISSION, callback)
     }
 
     @Test
     fun `Verify granted permission`() {
-        setupPermissionHelper(permissionHelper, PERMISSION_GRANTED)
+        setupPermissionHelper(permissionHelper, true)
 
         Sentry(activity, permissionHelper).requestPermission(ARBITRARY_PERMISSION, callback)
 
@@ -131,7 +131,7 @@ internal class SentryTest {
         val sentry = Sentry(activity, permissionHelper)
 
         // Initialize mocked responses
-        setupPermissionHelper(permissionHelper, PERMISSION_DENIED)
+        setupPermissionHelper(permissionHelper, false)
 
         setupPermissionResult(activity, sentry, PERMISSION_GRANTED, -1)
 
@@ -151,7 +151,7 @@ internal class SentryTest {
         val sentry = Sentry(activity, permissionHelper)
 
         // Initialize mocked responses
-        setupPermissionHelper(permissionHelper, PERMISSION_DENIED)
+        setupPermissionHelper(permissionHelper, false)
 
         // Perform action
         `when`(activity.requestPermissions(any(), anyInt())).then {
@@ -181,7 +181,7 @@ internal class SentryTest {
         val sentry = Sentry(activity, permissionHelper)
 
         // Initialize mocked responses
-        setupPermissionHelper(permissionHelper, PERMISSION_DENIED)
+        setupPermissionHelper(permissionHelper, false)
 
         setupPermissionResult(activity, sentry, PERMISSION_DENIED)
 
@@ -201,7 +201,7 @@ internal class SentryTest {
         val sentry = Sentry(activity, permissionHelper)
 
         // Initialize mocked responses
-        setupPermissionHelper(permissionHelper, PERMISSION_DENIED)
+        setupPermissionHelper(permissionHelper, false)
 
         setupPermissionResult(activity, sentry, PERMISSION_GRANTED)
 
@@ -221,7 +221,7 @@ internal class SentryTest {
         val sentry = Sentry(activity, permissionHelper)
 
         // Initialize mocked responses
-        setupPermissionHelper(permissionHelper, PERMISSION_DENIED)
+        setupPermissionHelper(permissionHelper, false)
 
         setupPermissionResult(activity, sentry, PERMISSION_DENIED)
 

@@ -4,6 +4,5 @@ import android.content.Context
 
 interface IPermissionHelper {
 
-    @PermissionResult
-    fun hasPermission(context: Context, permission: String): Int
+    fun hasPermission(context: Context, permission: String): Boolean
 }
