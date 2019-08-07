@@ -22,7 +22,4 @@
   ~ SOFTWARE.
   -->
 
-<manifest package="io.karn.sentry">
-
-    <application />
-</manifest>
+<manifest package="io.karn.sentry" />
