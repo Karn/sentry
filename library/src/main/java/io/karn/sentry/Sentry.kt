@@ -25,17 +25,19 @@
 package io.karn.sentry
 
 import android.Manifest
+import android.app.Activity
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.PermissionChecker
+import androidx.fragment.app.FragmentActivity
 import java.lang.ref.WeakReference
 
 
 /**
  * A lightweight class which makes requesting permissions a breeze.
  */
-class Sentry internal constructor(activity: AppCompatActivity, private val permissionHelper: IPermissionHelper) : ActivityCompat.OnRequestPermissionsResultCallback by activity {
+class Sentry<T : FragmentActivity> internal constructor(activity: T, private val permissionHelper: IPermissionHelper) : ActivityCompat.OnRequestPermissionsResultCallback by activity {
 
     companion object {
         /**
@@ -44,14 +46,14 @@ class Sentry internal constructor(activity: AppCompatActivity, private val permi
          * @param activity  A reference to an activity.
          * @return An instance of the Sentry object.
          */
-        fun with(activity: AppCompatActivity): Sentry {
+        fun <T : AppCompatActivity> with(activity: T): Sentry<T> {
             return Sentry(activity, PermissionHelper)
         }
     }
 
     private val requestCode: Int = this.hashCode()
     private lateinit var callback: ((Boolean) -> Unit)
-    private val activity: WeakReference<AppCompatActivity> = WeakReference(activity)
+    private val activity: WeakReference<T> = WeakReference(activity)
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         if (grantResults.isEmpty()) {
