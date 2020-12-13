@@ -26,9 +26,11 @@ package io.karn.sentry
 
 import android.Manifest
 import android.app.Activity
+import android.content.Intent
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityCompat.PermissionCompatDelegate
 import androidx.core.content.PermissionChecker
 import androidx.fragment.app.FragmentActivity
 import java.lang.ref.WeakReference
@@ -86,7 +88,8 @@ class Sentry<T : FragmentActivity> internal constructor(activity: T, private val
             }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                return@with this.requestPermissions(arrayOf(permission), requestCode)
+                this.packageManager.buildRequestPermissionsIntent
+                return@with requestPermissions(arrayOf(permission), requestCode)
             }
 
             callback(true)
