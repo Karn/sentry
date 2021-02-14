@@ -82,7 +82,7 @@ internal class SentryTest {
                 val code = requestCode ?: it.getArgument<Int>(1)
 
                 // Set the permission result to DENIED to validate the flow.
-                sentry.onRequestPermissionsResult(code, permissions, intArrayOf(permissionResult))
+                activity.onRequestPermissionsResult(code, permissions, intArrayOf(permissionResult))
             }
         }
     }
@@ -171,7 +171,7 @@ internal class SentryTest {
             val code = it.getArgument<Int>(1)
 
             // Set the permission result to an empty array.
-            sentry.onRequestPermissionsResult(code, permissions, intArrayOf())
+            activity.onRequestPermissionsResult(code, permissions, intArrayOf())
         }
 
         // Perform action

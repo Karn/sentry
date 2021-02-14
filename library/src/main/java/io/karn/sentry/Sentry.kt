@@ -40,7 +40,7 @@ typealias Permissions = ActivityCompat.OnRequestPermissionsResultCallback
 /**
  * A lightweight class which makes requesting permissions a breeze.
  */
-class Sentry internal constructor(activity: AppCompatActivity, private val permissionHelper: IPermissionHelper) : ActivityCompat.OnRequestPermissionsResultCallback by activity {
+class Sentry internal constructor(activity: AppCompatActivity, private val permissionHelper: IPermissionHelper) {
 
     companion object {
         // Tracks the requests that are made and their callbacks
