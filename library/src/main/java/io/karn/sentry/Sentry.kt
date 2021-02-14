@@ -30,7 +30,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.PermissionChecker
 import java.lang.ref.WeakReference
+import kotlin.random.Random
 
+/**
+ * Provides a typealias for aesthetic purposes.
+ */
+typealias Permissions = ActivityCompat.OnRequestPermissionsResultCallback
 
 /**
  * A lightweight class which makes requesting permissions a breeze.
@@ -38,6 +43,9 @@ import java.lang.ref.WeakReference
 class Sentry internal constructor(activity: AppCompatActivity, private val permissionHelper: IPermissionHelper) : ActivityCompat.OnRequestPermissionsResultCallback by activity {
 
     companion object {
+        // Tracks the requests that are made and their callbacks
+        internal val receivers = HashMap<Int, (granted: Boolean) -> Unit>()
+
         /**
          * A fluent API to create an instance of the Sentry object.
          *
@@ -49,19 +57,8 @@ class Sentry internal constructor(activity: AppCompatActivity, private val permi
         }
     }
 
-    private val requestCode: Int = this.hashCode()
-    private lateinit var callback: ((Boolean) -> Unit)
+    // Stores a reference to the activity
     private val activity: WeakReference<AppCompatActivity> = WeakReference(activity)
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (grantResults.isEmpty()) {
-            return
-        }
-
-        if (requestCode == this.requestCode) {
-            callback(grantResults[0] == PermissionChecker.PERMISSION_GRANTED)
-        }
-    }
 
     /**
      * Request a [permission] and return the result of the request through the [callback] receiver.
@@ -74,14 +71,22 @@ class Sentry internal constructor(activity: AppCompatActivity, private val permi
             throw IllegalArgumentException("Invalid permission specified.")
         }
 
-        this.callback = callback
-
         with(activity.get()) {
             this ?: return
 
+            // We can immediately resolve if we've been granted the permission
             if (permissionHelper.hasPermission(this, permission)) {
                 return@with callback(true)
             }
+
+            // If not generate a requestCode and store it in the global map
+            var requestCode: Int
+            do {
+                requestCode = Random.nextInt(1, Int.MAX_VALUE)
+            } while (receivers.containsKey(requestCode))
+
+            // Track the request
+            receivers[requestCode] = callback
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 return@with this.requestPermissions(arrayOf(permission), requestCode)
@@ -89,5 +94,23 @@ class Sentry internal constructor(activity: AppCompatActivity, private val permi
 
             callback(true)
         }
+    }
+}
+
+/**
+ * A delegated receiver for the onRequestPermissionsResult, this allows the activity's permissions
+ * results to be intercepted by Sentry and forwarded to the defined receiver.
+ */
+object SentryPermissionHandler : Permissions {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (grantResults.isEmpty()) {
+            return
+        }
+
+        // Ensure that there is a pending request code available and remove it once its been tracked
+        val callback = Sentry.receivers.remove(requestCode)
+                ?: return // No handler for request code
+
+        callback.invoke(grantResults[0] == PermissionChecker.PERMISSION_GRANTED)
     }
 }

@@ -34,6 +34,21 @@ dependencies {
 #### USAGE
 The most basic case is as follows:
 
+```diff
+// Add the following delegate to your activity.
+- class MyActivity : AppCompatActivity() {
++ class MyActivity : AppCompatActivity(), Permissions by SentryPermissionHandler {
+
+// or optionally manually delegate to the SentryPermissionHandler by adding the following override
+// in your Activity
++    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
++        SentryPermissionHandler.onRequestPermissionsResult(requestCode, permissions, grantResults)
++    }
+}
+```
+
+Then anywhere in your activity you can make a request to fetch a permission.
+
 ```Kotlin
 Sentry
     // A reference to your current activity.
