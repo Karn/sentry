@@ -28,9 +28,11 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.PermissionChecker.PERMISSION_DENIED
 import androidx.core.content.PermissionChecker.PERMISSION_GRANTED
+import com.nhaarman.mockitokotlin2.anyArray
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
+import org.mockito.AdditionalMatchers
 import org.mockito.Mockito
 import org.mockito.Mockito.*
 import java.lang.reflect.Field
@@ -85,7 +87,16 @@ internal class SentryTest {
         }
     }
 
-    private val activity = mock(AppCompatActivity::class.java)!!
+    private val activity = mock(AppCompatActivity::class.java)!!.also {
+        // Provide a manual override of the result
+        `when`(it.onRequestPermissionsResult(anyInt(), anyArray(), any<IntArray>())).then {
+            val requestCode = it.getArgument<Int>(0)
+            val permissions = it.getArgument<Array<String>>(1)
+            val grantResults = it.getArgument<IntArray>(2)
+
+            SentryPermissionHandler.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        }
+    }
     private val permissionHelper = mock(IPermissionHelper::class.java)!!
     private val callback = mockFrom<(Boolean) -> Unit>()
 
@@ -136,10 +147,11 @@ internal class SentryTest {
         setupPermissionResult(activity, sentry, PERMISSION_GRANTED, -1)
 
         // Perform action
-        sentry.requestPermission(ARBITRARY_PERMISSION, callback)
+        val requestCode = sentry.requestPermission(ARBITRARY_PERMISSION, callback)
 
         // Assert
-        verify(activity, times(1)).requestPermissions(any(), eq(sentry.hashCode()))
+        verify(activity, times(1)).requestPermissions(any(), eq(requestCode))
+        verify(activity, times(1)).onRequestPermissionsResult(eq(-1), anyArray(), any<IntArray>())
         verify(callback, never()).invoke(any(Boolean::class.java))
 
         verifyNoMoreInteractions(activity)
@@ -163,10 +175,11 @@ internal class SentryTest {
         }
 
         // Perform action
-        sentry.requestPermission(ARBITRARY_PERMISSION, callback)
+        val requestCode = sentry.requestPermission(ARBITRARY_PERMISSION, callback)
 
         // Assert
-        verify(activity, times(1)).requestPermissions(any(), eq(sentry.hashCode()))
+        verify(activity, times(1)).requestPermissions(any(), eq(requestCode))
+        verify(activity, times(1)).onRequestPermissionsResult(eq(requestCode), anyArray(), AdditionalMatchers.aryEq(IntArray(0)))
         verify(callback, never()).invoke(any(Boolean::class.java))
 
         verifyNoMoreInteractions(activity)
@@ -186,10 +199,10 @@ internal class SentryTest {
         setupPermissionResult(activity, sentry, PERMISSION_DENIED)
 
         // Perform action
-        sentry.requestPermission(ARBITRARY_PERMISSION, callback)
+        val requestCode = sentry.requestPermission(ARBITRARY_PERMISSION, callback)
 
         // Assert
-        verify(activity, never()).requestPermissions(any(), eq(sentry.hashCode()))
+        verify(activity, never()).requestPermissions(any(), eq(requestCode))
         verify(callback, times(1)).invoke(eq(true))
 
         verifyNoMoreInteractions(activity)
@@ -206,10 +219,11 @@ internal class SentryTest {
         setupPermissionResult(activity, sentry, PERMISSION_GRANTED)
 
         // Perform action
-        sentry.requestPermission(ARBITRARY_PERMISSION, callback)
+        val requestCode = sentry.requestPermission(ARBITRARY_PERMISSION, callback)
 
         // Assert
-        verify(activity, times(1)).requestPermissions(any(), eq(sentry.hashCode()))
+        verify(activity, times(1)).requestPermissions(any(), eq(requestCode))
+        verify(activity, times(1)).onRequestPermissionsResult(eq(requestCode), AdditionalMatchers.aryEq(arrayOf(ARBITRARY_PERMISSION)), AdditionalMatchers.aryEq(intArrayOf(PERMISSION_GRANTED)))
         verify(callback, times(1)).invoke(eq(true))
 
         verifyNoMoreInteractions(activity)
@@ -226,10 +240,11 @@ internal class SentryTest {
         setupPermissionResult(activity, sentry, PERMISSION_DENIED)
 
         // Perform action
-        sentry.requestPermission(ARBITRARY_PERMISSION, callback)
+        val requestCode = sentry.requestPermission(ARBITRARY_PERMISSION, callback)
 
         // Assert
-        verify(activity, times(1)).requestPermissions(any(), eq(sentry.hashCode()))
+        verify(activity, times(1)).requestPermissions(any(), eq(requestCode))
+        verify(activity, times(1)).onRequestPermissionsResult(eq(requestCode), AdditionalMatchers.aryEq(arrayOf(ARBITRARY_PERMISSION)), AdditionalMatchers.aryEq(intArrayOf(PERMISSION_DENIED)))
         verify(callback, times(1)).invoke(eq(false))
 
         verifyNoMoreInteractions(activity)

@@ -65,25 +65,26 @@ class Sentry internal constructor(activity: AppCompatActivity, private val permi
      *
      * @param permission    One of the many Android permissions. See: [Manifest.permission]
      * @param callback      A receiver for the result of the permission request.
+     * @return The request code associated with the request
      */
-    fun requestPermission(permission: String, callback: (granted: Boolean) -> Unit) {
+    fun requestPermission(permission: String, callback: (granted: Boolean) -> Unit): Int {
         if (permission.isBlank()) {
             throw IllegalArgumentException("Invalid permission specified.")
         }
 
+        // Generate a request code for the request
+        var requestCode: Int
+        do {
+            requestCode = Random.nextInt(1, Int.MAX_VALUE)
+        } while (receivers.containsKey(requestCode))
+
         with(activity.get()) {
-            this ?: return
+            this ?: return@with
 
             // We can immediately resolve if we've been granted the permission
             if (permissionHelper.hasPermission(this, permission)) {
                 return@with callback(true)
             }
-
-            // If not generate a requestCode and store it in the global map
-            var requestCode: Int
-            do {
-                requestCode = Random.nextInt(1, Int.MAX_VALUE)
-            } while (receivers.containsKey(requestCode))
 
             // Track the request
             receivers[requestCode] = callback
@@ -94,6 +95,8 @@ class Sentry internal constructor(activity: AppCompatActivity, private val permi
 
             callback(true)
         }
+
+        return requestCode
     }
 }
 
