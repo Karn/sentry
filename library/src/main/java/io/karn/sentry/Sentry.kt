@@ -25,8 +25,8 @@
 package io.karn.sentry
 
 import android.Manifest
+import android.app.Activity
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.PermissionChecker
 import java.lang.ref.WeakReference
@@ -40,7 +40,7 @@ typealias Permissions = ActivityCompat.OnRequestPermissionsResultCallback
 /**
  * A lightweight class which makes requesting permissions a breeze.
  */
-class Sentry internal constructor(activity: AppCompatActivity, private val permissionHelper: IPermissionHelper) {
+class Sentry internal constructor(activity: Activity, private val permissionHelper: IPermissionHelper) {
 
     companion object {
         // Tracks the requests that are made and their callbacks
@@ -52,13 +52,13 @@ class Sentry internal constructor(activity: AppCompatActivity, private val permi
          * @param activity  A reference to an activity.
          * @return An instance of the Sentry object.
          */
-        fun with(activity: AppCompatActivity): Sentry {
+        fun with(activity: Activity): Sentry {
             return Sentry(activity, PermissionHelper)
         }
     }
 
     // Stores a reference to the activity
-    private val activity: WeakReference<AppCompatActivity> = WeakReference(activity)
+    private val activity: WeakReference<Activity> = WeakReference(activity)
 
     /**
      * Request a [permission] and return the result of the request through the [callback] receiver.
@@ -75,7 +75,7 @@ class Sentry internal constructor(activity: AppCompatActivity, private val permi
         // Generate a request code for the request
         var requestCode: Int
         do {
-            requestCode = Random.nextInt(1, Int.MAX_VALUE)
+            requestCode = Random.nextInt(1, 65535)
         } while (receivers.containsKey(requestCode))
 
         with(activity.get()) {
@@ -90,7 +90,7 @@ class Sentry internal constructor(activity: AppCompatActivity, private val permi
             receivers[requestCode] = callback
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                return@with this.requestPermissions(arrayOf(permission), requestCode)
+                return@with ActivityCompat.requestPermissions(this, arrayOf(permission), requestCode)
             }
 
             callback(true)
